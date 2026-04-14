@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>日本語クイズ — Japonca Kelime Testi</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;600;700&family=Quicksand:wght@400;500;600;700&display=swap');
+
+:root {
+  --bg: #1a1a2e;
+  --surface: #16213e;
+  --card: #1f2b47;
+  --card-hover: #253350;
+  --accent: #e94560;
+  --accent2: #0f3460;
+  --gold: #f5c518;
+  --green: #00c853;
+  --red: #ff1744;
+  --text: #eaeaea;
+  --text-dim: #8899aa;
+  --text-dark: #556677;
+  --border: #2a3a5c;
+  --shadow: 0 8px 32px rgba(0,0,0,0.3);
+  --radius: 16px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+html, body {
+  height:100%; overflow:hidden;
+  font-family:'Quicksand','Noto Sans JP',sans-serif;
+  background:var(--bg); color:var(--text);
+}
+
+body {
+  display:flex; flex-direction:column;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+}
+
+/* Scrollable content area */
+.scroll-wrap { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+
+/* ===== SCREENS ===== */
+.screen { display:none; min-height:100%; padding:20px 16px 40px; }
+.screen.active { display:flex; flex-direction:column; }
+
+/* ===== HOME ===== */
+#home { align-items:center; justify-content:center; gap:28px; text-align:center; }
+
+.logo {
+  font-size:64px; line-height:1;
+  text-shadow: 0 0 40px rgba(233,69,96,0.4);
+  animation: float 3s ease-in-out infinite;
+}
+@keyframes float {
+  0%,100%{ transform:translateY(0); }
+  50%{ transform:translateY(-8px); }
+}
+
+.app-title {
+  font-family:'Noto Sans JP',sans-serif;
+  font-size:28px; font-weight:700;
+  background: linear-gradient(135deg, var(--accent), var(--gold));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+
+.app-sub { color:var(--text-dim); font-size:14px; font-weight:500; }
+
+.mode-grid { display:flex; flex-direction:column; gap:14px; width:100%; max-width:340px; }
+
+.mode-btn {
+  position:relative; overflow:hidden;
+  background:var(--card); border:1px solid var(--border);
+  border-radius:var(--radius); padding:18px 20px;
+  text-align:left; cursor:pointer; transition:all .2s;
+  -webkit-user-select:none; user-select:none;
+}
+.mode-btn:active { transform:scale(0.97); background:var(--card-hover); }
+
+.mode-btn .mode-icon { font-size:28px; margin-bottom:6px; }
+.mode-btn .mode-title { font-size:16px; font-weight:700; color:var(--text); }
+.mode-btn .mode-desc { font-size:12px; color:var(--text-dim); margin-top:2px; }
+
+.mode-btn::after {
+  content:''; position:absolute; right:16px; top:50%;
+  transform:translateY(-50%); width:8px; height:8px;
+  border-right:2px solid var(--text-dim); border-bottom:2px solid var(--text-dim);
+  transform:translateY(-50%) rotate(-45deg);
+}
+
+.stats-bar {
+  display:flex; gap:12px; justify-content:center;
+  background:var(--card); border-radius:12px; padding:14px 20px;
+  width:100%; max-width:340px;
+}
+.stat-item { text-align:center; flex:1; }
+.stat-val { font-size:22px; font-weight:700; color:var(--gold); }
+.stat-label { font-size:10px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.5px; }
+
+.reset-btn {
+  background:none; border:1px solid var(--border); border-radius:10px;
+  color:var(--text-dim); padding:10px 24px; font-size:13px; cursor:pointer;
+  font-family:inherit; transition:all .2s;
+}
+.reset-btn:active { background:var(--card); }
+
+/* ===== SETTINGS (before quiz) ===== */
+#settings { align-items:center; justify-content:center; gap:20px; }
+
+.settings-card {
+  background:var(--card); border-radius:var(--radius); padding:24px 20px;
+  width:100%; max-width:360px;
+}
+.settings-card h2 { font-size:18px; margin-bottom:16px; text-align:center; }
+
+.setting-row {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:12px 0; border-bottom:1px solid var(--border);
+}
+.setting-row:last-child { border:none; }
+.setting-label { font-size:14px; font-weight:600; }
+
+.count-selector {
+  display:flex; align-items:center; gap:12px;
+}
+.count-btn {
+  width:36px; height:36px; border-radius:50%;
+  background:var(--accent2); border:none; color:var(--text);
+  font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  font-family:inherit; font-weight:700;
+}
+.count-btn:active { background:var(--accent); }
+.count-val { font-size:20px; font-weight:700; min-width:36px; text-align:center; }
+
+.start-btn {
+  width:100%; max-width:360px; padding:16px;
+  background: linear-gradient(135deg, var(--accent), #c0392b);
+  border:none; border-radius:var(--radius); color:#fff;
+  font-size:17px; font-weight:700; cursor:pointer;
+  font-family:inherit; transition:all .2s;
+  box-shadow: 0 4px 20px rgba(233,69,96,0.4);
+}
+.start-btn:active { transform:scale(0.97); }
+
+.back-link {
+  background:none; border:none; color:var(--text-dim);
+  font-size:14px; cursor:pointer; font-family:inherit; padding:8px;
+}
+
+/* ===== QUIZ ===== */
+#quiz { gap:16px; }
+
+.quiz-header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:4px 0;
+}
+.quiz-back { background:none; border:none; color:var(--text-dim); font-size:24px; cursor:pointer; padding:4px 8px; }
+.quiz-progress { font-size:13px; color:var(--text-dim); font-weight:600; }
+.quiz-score { font-size:13px; color:var(--green); font-weight:700; }
+
+.progress-track {
+  height:6px; background:var(--card); border-radius:3px; overflow:hidden;
+}
+.progress-fill {
+  height:100%; background: linear-gradient(90deg, var(--accent), var(--gold));
+  border-radius:3px; transition:width .4s ease;
+}
+
+.question-card {
+  background:var(--card); border-radius:20px; padding:32px 20px;
+  text-align:center; min-height:180px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  box-shadow:var(--shadow);
+  position:relative; overflow:hidden;
+}
+.question-card::before {
+  content:''; position:absolute; top:-40px; right:-40px;
+  width:120px; height:120px; border-radius:50%;
+  background:rgba(233,69,96,0.08);
+}
+
+.q-type-badge {
+  font-size:11px; color:var(--text-dim); font-weight:600;
+  text-transform:uppercase; letter-spacing:1px; margin-bottom:12px;
+  background:var(--accent2); padding:4px 12px; border-radius:20px;
+}
+
+.q-main {
+  font-size:48px; font-weight:700; line-height:1.3;
+  font-family:'Noto Sans JP',sans-serif;
+  margin:8px 0;
+}
+.q-main.romaji-q { font-size:28px; font-family:'Quicksand',sans-serif; }
+.q-main.turkish-q { font-size:24px; font-family:'Quicksand',sans-serif; }
+
+.q-hint { font-size:13px; color:var(--text-dim); margin-top:8px; }
+
+.options { display:flex; flex-direction:column; gap:12px; margin-top:8px; }
+
+.opt-btn {
+  position:relative;
+  background:var(--card); border:2px solid var(--border);
+  border-radius:14px; padding:16px 20px;
+  font-size:16px; font-weight:600; color:var(--text);
+  cursor:pointer; text-align:center;
+  font-family:'Quicksand','Noto Sans JP',sans-serif;
+  transition:all .15s; -webkit-user-select:none; user-select:none;
+  min-height:52px; display:flex; align-items:center; justify-content:center;
+}
+.opt-btn:active:not(.locked) { transform:scale(0.97); }
+.opt-btn.locked { pointer-events:none; }
+
+.opt-btn.correct {
+  background:rgba(0,200,83,0.15); border-color:var(--green);
+  color:var(--green); animation:pop .3s ease;
+}
+.opt-btn.wrong {
+  background:rgba(255,23,68,0.12); border-color:var(--red);
+  color:var(--red);
+}
+@keyframes pop {
+  0%{ transform:scale(1); } 50%{ transform:scale(1.03); } 100%{ transform:scale(1); }
+}
+
+.feedback-bar {
+  text-align:center; padding:12px; border-radius:12px;
+  font-size:14px; font-weight:700;
+  animation:slideUp .25s ease;
+}
+@keyframes slideUp { from{opacity:0;transform:translateY(10px);} to{opacity:1;transform:translateY(0);} }
+
+.feedback-bar.ok { background:rgba(0,200,83,0.12); color:var(--green); }
+.feedback-bar.fail { background:rgba(255,23,68,0.1); color:var(--red); }
+
+/* ===== RESULT ===== */
+#result { align-items:center; justify-content:center; gap:20px; text-align:center; }
+
+.result-circle {
+  width:140px; height:140px; border-radius:50%;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  font-size:42px; font-weight:700;
+  border:4px solid; position:relative;
+}
+.result-circle.great { border-color:var(--green); color:var(--green); background:rgba(0,200,83,0.08); }
+.result-circle.ok { border-color:var(--gold); color:var(--gold); background:rgba(245,197,24,0.08); }
+.result-circle.bad { border-color:var(--red); color:var(--red); background:rgba(255,23,68,0.08); }
+.result-circle small { font-size:13px; color:var(--text-dim); font-weight:600; }
+
+.result-msg { font-size:20px; font-weight:700; }
+
+.wrong-list {
+  background:var(--card); border-radius:var(--radius); padding:16px;
+  width:100%; max-width:360px; text-align:left;
+  max-height:240px; overflow-y:auto;
+}
+.wrong-list h3 { font-size:14px; color:var(--accent); margin-bottom:10px; }
+.wrong-item {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:8px 0; border-bottom:1px solid var(--border);
+  font-size:13px;
+}
+.wrong-item:last-child { border:none; }
+.wrong-jp { font-family:'Noto Sans JP',sans-serif; font-weight:600; font-size:18px; }
+.wrong-ans { color:var(--text-dim); text-align:right; }
+
+.result-actions { display:flex; gap:12px; width:100%; max-width:360px; }
+.result-actions button {
+  flex:1; padding:14px; border-radius:var(--radius);
+  font-size:15px; font-weight:700; cursor:pointer;
+  font-family:inherit; border:none; transition:all .2s;
+}
+.result-actions button:active { transform:scale(0.97); }
+.btn-retry { background:var(--accent); color:#fff; }
+.btn-home { background:var(--card); color:var(--text); border:1px solid var(--border)!important; }
+</style>
+</head>
+<body>
+
+<div class="scroll-wrap">
+
+<!-- HOME -->
+<div id="home" class="screen active">
+  <div class="logo">鳥居</div>
+  <div>
+    <div class="app-title">日本語クイズ</div>
+    <div class="app-sub">Japonca Kelime Testi — 157 Kelime</div>
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat-item"><div class="stat-val" id="totalPlayed">0</div><div class="stat-label">Oynanan</div></div>
+    <div class="stat-item"><div class="stat-val" id="totalCorrect">0</div><div class="stat-label">Doğru</div></div>
+    <div class="stat-item"><div class="stat-val" id="totalRate">—</div><div class="stat-label">Başarı %</div></div>
+  </div>
+
+  <div class="mode-grid">
+    <div class="mode-btn" onclick="selectMode('hiragana2romaji')">
+      <div class="mode-icon">あ → abc</div>
+      <div class="mode-title">Hiragana → Romaji</div>
+      <div class="mode-desc">Hiragana'yı gör, doğru okunuşu seç</div>
+    </div>
+    <div class="mode-btn" onclick="selectMode('hiragana2turkish')">
+      <div class="mode-icon">あ → TR</div>
+      <div class="mode-title">Hiragana → Türkçe</div>
+      <div class="mode-desc">Hiragana'yı gör, Türkçe anlamını seç</div>
+    </div>
+    <div class="mode-btn" onclick="selectMode('turkish2pair')">
+      <div class="mode-icon">TR → あ+abc</div>
+      <div class="mode-title">Türkçe → Romaji + Hiragana</div>
+      <div class="mode-desc">Türkçe anlamı gör, doğru çifti seç</div>
+    </div>
+    <div class="mode-btn" onclick="selectMode('mixed')">
+      <div class="mode-icon">🎲 Karışık</div>
+      <div class="mode-title">Karışık Mod</div>
+      <div class="mode-desc">Her üç tip rastgele karışık gelir</div>
+    </div>
+  </div>
+
+  <button class="reset-btn" onclick="resetStats()">İstatistikleri Sıfırla</button>
+</div>
+
+<!-- SETTINGS -->
+<div id="settings" class="screen">
+  <div class="settings-card">
+    <h2 id="settingsTitle">Ayarlar</h2>
+    <div class="setting-row">
+      <span class="setting-label">Soru Sayısı</span>
+      <div class="count-selector">
+        <button class="count-btn" onclick="adjustCount(-5)">−</button>
+        <span class="count-val" id="qCount">20</span>
+        <button class="count-btn" onclick="adjustCount(5)">+</button>
+      </div>
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">Yanlışları Tekrarla</span>
+      <div class="count-selector">
+        <button class="count-btn" id="repeatToggle" onclick="toggleRepeat()" style="width:auto;padding:0 14px;border-radius:10px;font-size:14px;">EVET</button>
+      </div>
+    </div>
+  </div>
+  <button class="start-btn" onclick="startQuiz()">Başla</button>
+  <button class="back-link" onclick="showScreen('home')">← Geri</button>
+</div>
+
+<!-- QUIZ -->
+<div id="quiz" class="screen">
+  <div class="quiz-header">
+    <button class="quiz-back" onclick="confirmQuit()">✕</button>
+    <span class="quiz-progress" id="qProgress">1 / 20</span>
+    <span class="quiz-score" id="qScore">0 ✓</span>
+  </div>
+  <div class="progress-track"><div class="progress-fill" id="progressBar"></div></div>
+  <div class="question-card" id="questionCard"></div>
+  <div class="options" id="optionsArea"></div>
+  <div id="feedbackArea"></div>
+</div>
+
+<!-- RESULT -->
+<div id="result" class="screen">
+  <div class="result-circle" id="resultCircle"></div>
+  <div class="result-msg" id="resultMsg"></div>
+  <div class="wrong-list" id="wrongList" style="display:none;"></div>
+  <div class="result-actions">
+    <button class="btn-home" onclick="showScreen('home')">Ana Sayfa</button>
+    <button class="btn-retry" onclick="startQuiz()">Tekrar Oyna</button>
+  </div>
+</div>
+
+</div><!-- scroll-wrap -->
+
+<script>
+// ===== WORD DATA =====
+const WORDS=[
+{no:1,jp:"あおい",rm:"aoi",tr:"mavi"},{no:2,jp:"うえ",rm:"ue",tr:"yukarı"},{no:3,jp:"え",rm:"e",tr:"resim"},
+{no:4,jp:"あき",rm:"aki",tr:"sonbahar"},{no:5,jp:"かき",rm:"kaki",tr:"cennet hurması/ istiridye"},
+{no:6,jp:"こえ",rm:"koe",tr:"insan sesi"},{no:7,jp:"か",rm:"ka",tr:"sivrisinek"},
+{no:8,jp:"えき",rm:"eki",tr:"istasyon"},{no:9,jp:"おおきい",rm:"ookii",tr:"büyük"},
+{no:10,jp:"いけ",rm:"ike",tr:"gölet"},{no:11,jp:"いく",rm:"iku",tr:"gitmek"},
+{no:12,jp:"あい",rm:"ai",tr:"sevgi"},{no:13,jp:"あか",rm:"aka",tr:"kırmızı"},
+{no:14,jp:"いえ",rm:"ie",tr:"ev"},{no:15,jp:"かお",rm:"kao",tr:"yüz"},
+{no:16,jp:"かい",rm:"kai",tr:"deniz kabuğu"},{no:17,jp:"き",rm:"ki",tr:"ağaç"},
+{no:18,jp:"くうき",rm:"kuuki",tr:"atmosfer, hava"},{no:19,jp:"ここ",rm:"koko",tr:"burası"},
+{no:20,jp:"きかい",rm:"kikai",tr:"makine"},{no:21,jp:"けい",rm:"kei",tr:"çap"},
+{no:22,jp:"しお",rm:"shio",tr:"tuz"},{no:23,jp:"て",rm:"te",tr:"el"},
+{no:24,jp:"くち",rm:"kuchi",tr:"ağız"},{no:25,jp:"ちかてつ",rm:"chikatetsu",tr:"metro"},
+{no:26,jp:"きせつ",rm:"kisetsu",tr:"mevsim"},{no:27,jp:"あせ",rm:"ase",tr:"ter"},
+{no:28,jp:"あし",rm:"ashi",tr:"ayak"},{no:29,jp:"そこ",rm:"soko",tr:"şura"},
+{no:30,jp:"うし",rm:"ushi",tr:"inek"},{no:31,jp:"うち",rm:"uchi",tr:"ev"},
+{no:32,jp:"くつ",rm:"kutsu",tr:"ayakkabı"},{no:33,jp:"すいか",rm:"suika",tr:"karpuz"},
+{no:34,jp:"かさ",rm:"kasa",tr:"şemsiye"},{no:35,jp:"あさかい",rm:"asakai",tr:"sabah toplantısı"},
+{no:36,jp:"かさい",rm:"kasai",tr:"yangın"},{no:37,jp:"いしき",rm:"ishiki",tr:"bilinç"},
+{no:38,jp:"ちしき",rm:"chishiki",tr:"bilgi"},{no:39,jp:"かたち",rm:"katachi",tr:"şekil"},
+{no:40,jp:"てつ",rm:"tetsu",tr:"demir"},{no:41,jp:"なつ",rm:"natsu",tr:"yaz"},
+{no:42,jp:"なに",rm:"nani",tr:"ne"},{no:43,jp:"はな",rm:"hana",tr:"çiçek"},
+{no:44,jp:"ねこ",rm:"neko",tr:"kedi"},{no:45,jp:"いぬ",rm:"inu",tr:"köpek"},
+{no:46,jp:"ひと",rm:"hito",tr:"insan"},{no:47,jp:"はいき",rm:"haiki",tr:"egzoz"},
+{no:48,jp:"かた",rm:"kata",tr:"kalıp"},{no:49,jp:"なか",rm:"naka",tr:"iç"},
+{no:50,jp:"てなおし",rm:"tenoshi",tr:"tamir"},{no:51,jp:"あなけい",rm:"anakei",tr:"delik çapı"},
+{no:52,jp:"きのう",rm:"kinou",tr:"fonksiyon"},{no:53,jp:"ひく",rm:"hiku",tr:"çekmek"},
+{no:54,jp:"おす",rm:"osu",tr:"itmek"},{no:55,jp:"きます",rm:"kimasu",tr:"gelmek"},
+{no:56,jp:"いきます",rm:"ikimasu",tr:"gitmek"},{no:57,jp:"かきます",rm:"kakimasu",tr:"yazmak"},
+{no:58,jp:"おきます",rm:"okimasu",tr:"koymak"},{no:59,jp:"むしします",rm:"mushishimasu",tr:"görmezden gelmek"},
+{no:60,jp:"あけます",rm:"akemasu",tr:"açmak"},{no:61,jp:"ためします",rm:"tameshimasu",tr:"denemek"},
+{no:62,jp:"やま",rm:"yama",tr:"dağ"},{no:63,jp:"よなか",rm:"yonaka",tr:"gece yarısı"},
+{no:64,jp:"よこ",rm:"yoko",tr:"yan"},{no:65,jp:"やきにく",rm:"yakiniku",tr:"japon barbeküsü"},
+{no:66,jp:"やさしい",rm:"yasashii",tr:"kibar"},{no:67,jp:"ゆめ",rm:"yume",tr:"rüya"},
+{no:68,jp:"なま",rm:"nama",tr:"çiğ"},{no:69,jp:"ふゆ",rm:"fuyu",tr:"kış"},
+{no:70,jp:"ゆき",rm:"yuki",tr:"kar"},{no:71,jp:"ゆか",rm:"yuka",tr:"yer"},
+{no:72,jp:"せまい",rm:"semai",tr:"dar"},{no:73,jp:"またあした",rm:"mata ashita",tr:"yarın görüşürüz"},
+{no:74,jp:"おはよう",rm:"ohayou",tr:"günaydın"},{no:75,jp:"みなおし",rm:"minaoshi",tr:"gözden geçirme"},
+{no:76,jp:"おす",rm:"osu",tr:"erkek (fiş)"},{no:77,jp:"めす",rm:"mesu",tr:"dişi (priz)"},
+{no:78,jp:"まもう",rm:"mamou",tr:"aşınma"},{no:79,jp:"よち",rm:"yochi",tr:"öngörü"},
+{no:80,jp:"やね",rm:"yane",tr:"çatı"},{no:81,jp:"ようこそ",rm:"youkoso",tr:"hoşgeldiniz"},
+{no:82,jp:"うまい",rm:"umai",tr:"nefis/akıcı(konuşmak)"},{no:83,jp:"やきもち",rm:"yakimochi",tr:"kıskançlık"},
+{no:84,jp:"うた",rm:"uta",tr:"şarkı"},{no:85,jp:"うま",rm:"uma",tr:"at"},
+{no:86,jp:"うすい",rm:"usui",tr:"açık(koyunun zıttı)"},{no:87,jp:"こい",rm:"koi",tr:"koyu"},
+{no:88,jp:"くま",rm:"kuma",tr:"ayı"},{no:89,jp:"ふめい",rm:"fumei",tr:"net değil/anlaşılmayan"},
+{no:90,jp:"めいかく",rm:"meikaku",tr:"net"},{no:91,jp:"へいきん",rm:"heikin",tr:"ortalama"},
+{no:92,jp:"へいきんち",rm:"heikinchi",tr:"ortalama değer"},
+{no:93,jp:"あたい",rm:"atai",tr:"değer"},{no:94,jp:"おいしい",rm:"oishii",tr:"lezzetli"},
+{no:95,jp:"へんかてん",rm:"henkaten",tr:"değişen nokta"},{no:96,jp:"もう",rm:"mou",tr:"artık"},
+{no:97,jp:"ほそい",rm:"hosoi",tr:"ince"},{no:98,jp:"あつい",rm:"atsui",tr:"kalın"},
+{no:99,jp:"にほん",rm:"nihon",tr:"japonya"},{no:100,jp:"はな",rm:"hana",tr:"burun"},
+{no:101,jp:"さん",rm:"san",tr:"üç/asit"},{no:102,jp:"あつい",rm:"atsui",tr:"sıcak"},
+{no:103,jp:"さむい",rm:"samui",tr:"soğuk"},{no:104,jp:"まあまあ",rm:"maamaa",tr:"eh şöyle böyle"},
+{no:105,jp:"みみ",rm:"mimi",tr:"kulak"},{no:106,jp:"あめ",rm:"ame",tr:"yağmur"},
+{no:107,jp:"め",rm:"me",tr:"göz"},{no:108,jp:"す",rm:"su",tr:"sirke"},
+{no:109,jp:"さとう",rm:"satou",tr:"şeker"},{no:110,jp:"かさ",rm:"kasa",tr:"şemsiye"},
+{no:111,jp:"ひかり",rm:"hikari",tr:"ışık"},{no:112,jp:"こけ",rm:"koke",tr:"yosun"},
+{no:113,jp:"とり",rm:"tori",tr:"kuş/tavuk"},{no:114,jp:"かめ",rm:"kame",tr:"kaplumbağa"},
+{no:115,jp:"われわれ",rm:"wareware",tr:"biz"},{no:116,jp:"われ",rm:"ware",tr:"yırtık"},
+{no:117,jp:"わり",rm:"wari",tr:"oran"},{no:118,jp:"ゆれる",rm:"yureru",tr:"sallanmak"},
+{no:119,jp:"ゆるむ",rm:"yurumu",tr:"gevşemek"},{no:120,jp:"さわる",rm:"sawaru",tr:"dokunmak"},
+{no:121,jp:"へらす",rm:"herasu",tr:"azaltma"},{no:122,jp:"ふえる",rm:"fueru",tr:"arttırma"},
+{no:123,jp:"へび",rm:"hebi",tr:"yılan"},{no:124,jp:"かげ",rm:"kage",tr:"gölge"},
+{no:125,jp:"あげる",rm:"ageru",tr:"kaldırmak"},{no:126,jp:"さがる",rm:"sagaru",tr:"indirmek"},
+{no:127,jp:"おねがい",rm:"onegai",tr:"rica"},{no:128,jp:"うりあげ",rm:"uriage",tr:"ciro, satış geliri"},
+{no:129,jp:"どうぐ",rm:"dougu",tr:"araç-gereç"},{no:130,jp:"ぎじろく",rm:"gijiroku",tr:"toplantı tutanağı"},
+{no:131,jp:"たべる",rm:"taberu",tr:"yemek"},{no:132,jp:"みず",rm:"mizu",tr:"su"},
+{no:133,jp:"じかん",rm:"jikan",tr:"saat"},{no:134,jp:"てぶくろ",rm:"tebukuro",tr:"eldiven"},
+{no:135,jp:"ぺん",rm:"pen",tr:"kalem"},{no:136,jp:"かばん",rm:"kaban",tr:"çanta"},
+{no:137,jp:"めがね",rm:"megane",tr:"gözlük"},{no:138,jp:"ぶひん",rm:"buhin",tr:"parça"},
+{no:139,jp:"ばり",rm:"bari",tr:"kesme çapağı"},{no:140,jp:"ばね",rm:"bane",tr:"yay"},
+{no:141,jp:"やね",rm:"yane",tr:"sundurma"},{no:142,jp:"だいしゃ",rm:"taisha",tr:"taşıma arabası"},
+{no:143,jp:"しゃりん",rm:"sharin",tr:"küçük teker"},{no:144,jp:"だんじき",rm:"danjiki",tr:"oruç"},
+{no:145,jp:"さべつ",rm:"sabetsu",tr:"ayrımcılık"},{no:146,jp:"さいてい　ちんぎん",rm:"saiten chingin",tr:"asgari ücret"},
+{no:147,jp:"ひんしつしょう",rm:"hinshitsushou",tr:"kalite ödülü"},
+{no:148,jp:"ほこり",rm:"hokori",tr:"toz"},{no:149,jp:"みつもり",rm:"mitsumori",tr:"teklif"},
+{no:150,jp:"うんぱん",rm:"unpan",tr:"taşıma"},{no:151,jp:"はしら",rm:"hashira",tr:"kolon"},
+{no:152,jp:"かべ",rm:"kabe",tr:"duvar"},{no:153,jp:"しょうさい",rm:"shousai",tr:"detay"},
+{no:154,jp:"ていし　じかん",rm:"teishi jikan",tr:"duruş süresi"},
+{no:155,jp:"よりよい",rm:"yoriyoi",tr:"daha iyi"},{no:156,jp:"そうこ",rm:"souko",tr:"depo"},
+{no:157,jp:"かいきん　てあて",rm:"kaikin teate",tr:"devam primi"}
+];
+
+// ===== STATE =====
+let currentMode='', questionCount=20, repeatWrong=true;
+let questions=[], qIndex=0, score=0, wrongs=[];
+let locked=false;
+
+// ===== STORAGE =====
+const SKEY='nihongo_quiz_stats';
+function loadStats(){
+  try{ return JSON.parse(localStorage.getItem(SKEY))||{played:0,correct:0}; }catch(e){ return {played:0,correct:0}; }
+}
+function saveStats(s){ try{localStorage.setItem(SKEY,JSON.stringify(s));}catch(e){} }
+function updateStatsUI(){
+  const s=loadStats();
+  document.getElementById('totalPlayed').textContent=s.played;
+  document.getElementById('totalCorrect').textContent=s.correct;
+  document.getElementById('totalRate').textContent=s.played?Math.round(s.correct/s.played*100)+'%':'—';
+}
+function resetStats(){
+  if(confirm('Tüm istatistikler silinecek. Emin misiniz?')){
+    saveStats({played:0,correct:0}); updateStatsUI();
+  }
+}
+
+// ===== NAVIGATION =====
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelector('.scroll-wrap').scrollTop=0;
+  if(id==='home') updateStatsUI();
+}
+
+// ===== MODE SELECT =====
+function selectMode(mode){
+  currentMode=mode;
+  const titles={hiragana2romaji:'あ → Romaji',hiragana2turkish:'あ → Türkçe',turkish2pair:'TR → あ+abc',mixed:'🎲 Karışık'};
+  document.getElementById('settingsTitle').textContent=titles[mode]||'Ayarlar';
+  showScreen('settings');
+}
+
+function adjustCount(d){
+  questionCount=Math.max(5,Math.min(157,questionCount+d));
+  document.getElementById('qCount').textContent=questionCount;
+}
+
+function toggleRepeat(){
+  repeatWrong=!repeatWrong;
+  document.getElementById('repeatToggle').textContent=repeatWrong?'EVET':'HAYIR';
+}
+
+// ===== HELPERS =====
+function shuffle(arr){
+  const a=[...arr]; for(let i=a.length-1;i>0;i--){const j=Math.random()*i+1|0;[a[i],a[j]]=[a[j],a[i]];} return a;
+}
+
+function pickDistractors(correct, field, count, exclude){
+  // pick random words that differ in the given field
+  const pool=WORDS.filter(w=>w[field]!==correct[field] && (!exclude||!exclude.includes(w.no)));
+  const shuffled=shuffle(pool);
+  return shuffled.slice(0,count);
+}
+
+// ===== QUESTION GENERATION =====
+function generateQuestion(word, mode){
+  if(mode==='mixed') mode=['hiragana2romaji','hiragana2turkish','turkish2pair'][Math.random()*3|0];
+
+  if(mode==='hiragana2romaji'){
+    const distractors=pickDistractors(word,'rm',3);
+    const opts=shuffle([
+      {text:word.rm, correct:true},
+      ...distractors.map(d=>({text:d.rm,correct:false}))
+    ]);
+    return {
+      type:'Hiragana → Romaji',
+      display:word.jp, displayClass:'',
+      hint:'Doğru okunuşu seçin',
+      options:opts, word:word
+    };
+  }
+
+  if(mode==='hiragana2turkish'){
+    const distractors=pickDistractors(word,'tr',3);
+    const opts=shuffle([
+      {text:word.tr, correct:true},
+      ...distractors.map(d=>({text:d.tr,correct:false}))
+    ]);
+    return {
+      type:'Hiragana → Türkçe',
+      display:word.jp, displayClass:'',
+      hint:'Türkçe anlamını seçin',
+      options:opts, word:word
+    };
+  }
+
+  if(mode==='turkish2pair'){
+    const distractors=pickDistractors(word,'rm',3);
+    const opts=shuffle([
+      {text:word.rm+' — '+word.jp, correct:true},
+      ...distractors.map(d=>({text:d.rm+' — '+d.jp,correct:false}))
+    ]);
+    return {
+      type:'Türkçe → Romaji + Hiragana',
+      display:word.tr, displayClass:'turkish-q',
+      hint:'Doğru çifti seçin',
+      options:opts, word:word
+    };
+  }
+}
+
+// ===== START QUIZ =====
+function startQuiz(){
+  const pool=shuffle(WORDS).slice(0, Math.min(questionCount, WORDS.length));
+  questions=pool.map(w=>generateQuestion(w, currentMode));
+  qIndex=0; score=0; wrongs=[];
+  locked=false;
+  showScreen('quiz');
+  renderQuestion();
+}
+
+// ===== RENDER =====
+function renderQuestion(){
+  if(qIndex>=questions.length){ endQuiz(); return; }
+  const q=questions[qIndex];
+  locked=false;
+
+  document.getElementById('qProgress').textContent=(qIndex+1)+' / '+questions.length;
+  document.getElementById('qScore').textContent=score+' ✓';
+  document.getElementById('progressBar').style.width=((qIndex/questions.length)*100)+'%';
+  document.getElementById('feedbackArea').innerHTML='';
+
+  const card=document.getElementById('questionCard');
+  card.innerHTML=`
+    <div class="q-type-badge">${q.type}</div>
+    <div class="q-main ${q.displayClass}">${q.display}</div>
+    <div class="q-hint">${q.hint}</div>
+  `;
+
+  const area=document.getElementById('optionsArea');
+  area.innerHTML=q.options.map((o,i)=>`
+    <button class="opt-btn" onclick="selectAnswer(${i})" id="opt${i}">${o.text}</button>
+  `).join('');
+}
+
+// ===== ANSWER =====
+function selectAnswer(idx){
+  if(locked) return;
+  locked=true;
+
+  const q=questions[qIndex];
+  const opts=q.options;
+  const fb=document.getElementById('feedbackArea');
+
+  // Mark all buttons
+  document.querySelectorAll('.opt-btn').forEach(b=>b.classList.add('locked'));
+
+  if(opts[idx].correct){
+    score++;
+    document.getElementById('opt'+idx).classList.add('correct');
+    fb.innerHTML='<div class="feedback-bar ok">✓ Doğru!</div>';
+  } else {
+    document.getElementById('opt'+idx).classList.add('wrong');
+    // Show correct
+    opts.forEach((o,i)=>{ if(o.correct) document.getElementById('opt'+i).classList.add('correct'); });
+    const correctText=opts.find(o=>o.correct).text;
+    fb.innerHTML=`<div class="feedback-bar fail">✗ Doğru cevap: ${correctText}</div>`;
+    wrongs.push(q.word);
+
+    // Add retry at end if repeat enabled
+    if(repeatWrong){
+      const retry=generateQuestion(q.word, currentMode==='mixed'?'mixed':currentMode);
+      questions.push(retry);
+    }
+  }
+
+  document.getElementById('qScore').textContent=score+' ✓';
+
+  setTimeout(()=>{
+    qIndex++;
+    renderQuestion();
+  }, 1200);
+}
+
+// ===== END =====
+function endQuiz(){
+  const total=questions.length;
+  const pct=Math.round(score/total*100);
+
+  // Save stats
+  const s=loadStats();
+  s.played+=total; s.correct+=score; saveStats(s);
+
+  const circle=document.getElementById('resultCircle');
+  const cls=pct>=80?'great':pct>=50?'ok':'bad';
+  circle.className='result-circle '+cls;
+  circle.innerHTML=pct+'%<small>'+score+'/'+total+'</small>';
+
+  const msgs=pct>=90?'素晴らしい！ Mükemmel!':pct>=70?'よくできた！ Güzel!':pct>=50?'まあまあ Fena değil':' がんばって！ Tekrar dene!';
+  document.getElementById('resultMsg').textContent=msgs;
+
+  // Wrong list
+  const wl=document.getElementById('wrongList');
+  // Deduplicate wrongs
+  const unique=[...new Map(wrongs.map(w=>[w.no,w])).values()];
+  if(unique.length){
+    wl.style.display='block';
+    wl.innerHTML='<h3>Yanlış Yapılan Kelimeler ('+unique.length+')</h3>'+
+      unique.map(w=>`
+        <div class="wrong-item">
+          <span class="wrong-jp">${w.jp}</span>
+          <span class="wrong-ans">${w.rm} — ${w.tr}</span>
+        </div>
+      `).join('');
+  } else {
+    wl.style.display='none';
+  }
+
+  showScreen('result');
+}
+
+function confirmQuit(){
+  if(confirm('Quizden çıkmak istediğinize emin misiniz?')) showScreen('home');
+}
+
+// INIT
+updateStatsUI();
+</script>
+</body>
+</html>
