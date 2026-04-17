@@ -354,51 +354,38 @@ body{
 
 <script>
 /* ══════════════════════════════
-   VERİ — Google Sheets'ten çekilir
+   VERİ — Apps Script üzerinden çekilir
 ══════════════════════════════ */
-const SHEET_ID='118Ri5Jlze5GW7aoXZOwREPLWifllOB1E';
-const SHEET_GID='504722267';
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbwW9pcHYv-gGBgZtToE78CGYJfKpztqj8al-_0r5A8D39Nw5AbEl447kM69qWmySV-8/exec';
+const SCRIPT_KEY='sango2026gizli';
 let DATA = [];
 
-function loadFromSheets(){
-  return new Promise((resolve)=>{
-    document.getElementById('hdrCount').textContent='Yükleniyor...';
-    window.__berkeCallback=function(data){
-      try{
-        const rows=data.table.rows;
-        const words=[];
-        for(let i=0;i<rows.length;i++){
-          const c=rows[i].c;
-          if(!c||!c[1]) continue;
-          const dt=(c[0]?.v||'').toString().trim();
-          const jp=(c[1]?.v||'').toString().trim();
-          const rm=(c[2]?.v||'').toString().trim();
-          const tr=(c[3]?.v||'').toString().trim();
-          if(jp&&rm&&tr) words.push([dt, jp, rm, tr]);
-        }
-        if(words.length>0){
-          DATA=words;
-          localStorage.setItem('berke_words_cache',JSON.stringify(DATA));
-          resolve(true);
-        } else { tryBerkeCache(resolve); }
-      }catch(e){ console.error(e); tryBerkeCache(resolve); }
-      const old=document.getElementById('berke_script');
-      if(old) old.remove();
-    };
-    const script=document.createElement('script');
-    script.id='berke_script';
-    script.src='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:json;responseHandler:__berkeCallback&gid='+SHEET_GID+'&t='+Date.now();
-    script.onerror=function(){ tryBerkeCache(resolve); script.remove(); };
-    document.body.appendChild(script);
-    setTimeout(()=>{ if(DATA.length===0) tryBerkeCache(resolve); },10000);
-  });
-}
-
-function tryBerkeCache(resolve){
-  if(DATA.length>0) return;
-  const cached=localStorage.getItem('berke_words_cache');
-  if(cached){ DATA=JSON.parse(cached); resolve(true); }
-  else{ document.getElementById('hdrCount').textContent='Yüklenemedi!'; resolve(false); }
+async function loadFromSheets(){
+  document.getElementById('hdrCount').textContent='Yükleniyor...';
+  try{
+    const resp=await fetch(SCRIPT_URL+'?key='+SCRIPT_KEY);
+    const data=await resp.json();
+    if(data.error) throw new Error(data.error);
+    const words=[];
+    data.forEach(w=>{
+      const dt=(w.dt||'').toString().trim();
+      const jp=(w.jp||'').toString().trim();
+      const rm=(w.rm||'').toString().trim();
+      const tr=(w.tr||'').toString().trim();
+      if(jp&&rm&&tr) words.push([dt, jp, rm, tr]);
+    });
+    if(words.length>0){
+      DATA=words;
+      localStorage.setItem('berke_words_cache',JSON.stringify(DATA));
+      return true;
+    } else throw new Error('Kelime bulunamadı');
+  }catch(e){
+    console.error(e);
+    const cached=localStorage.getItem('berke_words_cache');
+    if(cached){ DATA=JSON.parse(cached); return true; }
+    document.getElementById('hdrCount').textContent='Yüklenemedi!';
+    return false;
+  }
 }
 
 /* ══════════════════════════════
