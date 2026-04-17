@@ -317,80 +317,44 @@ async function trackLogin(){
   try{ await db.ref('stats/logins').transaction(v=>(v||0)+1); }catch(e){}
 }
 
-// ===== GOOGLE SHEETS — JSONP (works from file:// and https://) =====
-const SHEET_ID='118Ri5Jlze5GW7aoXZOwREPLWifllOB1E';
-const SHEET_GID='504722267';
+// ===== APPS SCRIPT URL (gizli anahtarlı) =====
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbwW9pcHYv-gGBgZtToE78CGYJfKpztqj8al-_0r5A8D39Nw5AbEl447kM69qWmySV-8/exec';
+const SCRIPT_KEY='sango2026gizli';
 
 // ===== WORDS — loaded dynamically =====
 let WORDS=[];
 
-// ===== LOAD WORDS via JSONP =====
-function loadWords(){
-  return new Promise((resolve)=>{
-    const loadCount=document.getElementById('loadCount');
-    loadCount.textContent='Google Sheets\'ten çekiliyor...';
-
-    // JSONP callback
-    window.__gsheetCallback=function(data){
-      try{
-        const rows=data.table.rows;
-        const words=[];
-        for(let i=0;i<rows.length;i++){
-          const c=rows[i].c;
-          if(!c||!c[1]) continue;
-          const jp=(c[1]?.v||'').toString().trim();
-          const rm=(c[2]?.v||'').toString().trim();
-          const tr=(c[3]?.v||'').toString().trim();
-          if(jp&&rm&&tr){
-            words.push({no:i+1,jp:jp,rm:rm,tr:tr});
-          }
-        }
-        if(words.length>0){
-          WORDS=words;
-          localStorage.setItem('nihongo_words_cache',JSON.stringify(WORDS));
-          localStorage.setItem('nihongo_words_date',new Date().toISOString());
-          loadCount.textContent=WORDS.length+' kelime yüklendi ✓';
-          resolve(true);
-        } else {
-          throw new Error('Kelime bulunamadı');
-        }
-      }catch(e){
-        console.error('Parse error:',e);
-        tryCache(loadCount,resolve);
-      }
-      // Cleanup
-      const old=document.getElementById('gsheet_script');
-      if(old) old.remove();
-    };
-
-    // Inject script tag (bypasses CORS)
-    const script=document.createElement('script');
-    script.id='gsheet_script';
-    script.src='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:json;responseHandler:__gsheetCallback&gid='+SHEET_GID+'&t='+Date.now();
-    script.onerror=function(){
-      console.error('Script load error');
-      tryCache(loadCount,resolve);
-      script.remove();
-    };
-    document.body.appendChild(script);
-
-    // Timeout after 10 seconds
-    setTimeout(()=>{
-      if(WORDS.length===0) tryCache(loadCount,resolve);
-    },10000);
-  });
-}
-
-function tryCache(loadCount,resolve){
-  if(WORDS.length>0) return; // already loaded
-  const cached=localStorage.getItem('nihongo_words_cache');
-  if(cached){
-    WORDS=JSON.parse(cached);
-    loadCount.textContent=WORDS.length+' kelime (önbellekten) ✓';
-    resolve(true);
-  } else {
-    loadCount.innerHTML='Yüklenemedi!<br><span style="font-size:11px;color:var(--text-dim)">Google Sheets erişim ayarlarını kontrol edin.</span>';
-    resolve(false);
+// ===== LOAD WORDS via Apps Script =====
+async function loadWords(){
+  const loadCount=document.getElementById('loadCount');
+  loadCount.textContent='Kelimeler çekiliyor...';
+  try{
+    const resp=await fetch(SCRIPT_URL+'?key='+SCRIPT_KEY);
+    const data=await resp.json();
+    if(data.error) throw new Error(data.error);
+    const words=[];
+    data.forEach((w,i)=>{
+      const jp=(w.jp||'').toString().trim();
+      const rm=(w.rm||'').toString().trim();
+      const tr=(w.tr||'').toString().trim();
+      if(jp&&rm&&tr) words.push({no:i+1,jp,rm,tr});
+    });
+    if(words.length>0){
+      WORDS=words;
+      localStorage.setItem('nihongo_words_cache',JSON.stringify(WORDS));
+      loadCount.textContent=WORDS.length+' kelime yüklendi ✓';
+      return true;
+    } else throw new Error('Kelime bulunamadı');
+  }catch(e){
+    console.error(e);
+    const cached=localStorage.getItem('nihongo_words_cache');
+    if(cached){
+      WORDS=JSON.parse(cached);
+      loadCount.textContent=WORDS.length+' kelime (önbellekten) ✓';
+      return true;
+    }
+    loadCount.innerHTML='Yüklenemedi!<br><span style="font-size:12px;color:var(--red)">'+e.message+'</span>';
+    return false;
   }
 }
 
